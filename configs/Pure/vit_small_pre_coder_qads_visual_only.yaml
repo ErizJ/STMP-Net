@@ -1,0 +1,40 @@
+DATA:
+  DATASET: qads
+  BATCH_SIZE: 8
+  PATCH_NUM: 8
+  DATA_PATH: data/QADS/super-resolved_images
+  NUM_WORKERS: 4
+  SCENE_NUM_CLASSES: 9
+  TEXTURE_NUM_CLASSES: 11
+  STRUCTURE_NUM_CLASSES: 6
+
+TEST:
+  USE_TTA: True
+SET:
+  COUNT: 980
+STAGE1:
+  EPOCHS: 30
+  WARMUP_EPOCHS: 5
+MODEL:
+  TYPE: purevit
+  NAME: vit_small_pre
+  DROP_PATH_RATE: 0.0
+  VIT:
+    PATCH_SIZE: 16
+    EMBED_DIM: 384
+    DEPTH: 12
+    NUM_HEADS: 6
+    MLP_RATIO: 4
+    QKV_BIAS: True
+
+# 所有 prompt 分支关闭，纯视觉模型
+scene: False
+dist: False
+texture: False
+structure: False
+visual_only: True
+
+ALPHA: 1.0
+BETA: 0.5
+GAMMA: 0.4
+DELTA: 1.5

@@ -1,0 +1,37 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Data / images
+data/
+
+# Dataset caches
+datasets/*.txt
+datasets/*.csv
+
+# Runtime output
+output/
+log/
+results/
+*.log
+
+# Checkpoints / weights
+*.pth
+*.pt
+
+# Non-essential tools
+tools/debug/
+tools/gradcam_full_dataset.py
+tools/visualize_gradcam_qads.py
+tools/tsne_visualize.py
+tools/visualize_ablation.py
+tools/analyze_ablation_results.py
+tools/classify_sr_image.py
+tools/ollama_script_sriqa.py
+
+# Misc
+.claude/
+.DS_Store
+.vscode/
+.idea/

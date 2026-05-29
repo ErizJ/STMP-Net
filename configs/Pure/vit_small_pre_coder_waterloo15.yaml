@@ -1,0 +1,40 @@
+DATA:
+  DATASET: waterloo15
+  BATCH_SIZE: 16
+  PATCH_NUM: 8
+  DATA_PATH: data/Waterloo15/WIND_all
+  NUM_WORKERS: 4
+  SCENE_NUM_CLASSES: 9
+  TEXTURE_NUM_CLASSES: 11
+  STRUCTURE_NUM_CLASSES: 6
+
+TEST:
+  USE_TTA: True  # Test Time Augmentation: 水平翻转增强，可提升 0.005~0.01 PLCC/SRCC
+SET:
+  COUNT: 312
+STAGE1:
+  EPOCHS: 30
+  WARMUP_EPOCHS: 5
+MODEL:
+  TYPE: purevit
+  NAME: vit_small_pre
+  DROP_PATH_RATE: 0.0
+  VIT:
+    PATCH_SIZE: 16
+    EMBED_DIM: 384
+    DEPTH: 12
+    NUM_HEADS: 6
+    MLP_RATIO: 4
+    QKV_BIAS: True
+
+# Branch configuration (must match training settings)
+scene: True
+dist: True
+texture: True
+structure: True
+
+# Loss function weight optimization (for PLCC/SRCC metrics)
+ALPHA: 1.0    # texture branch loss weight
+BETA: 0.5     # structure branch loss weight (moderate, avoid disrupting training early)
+GAMMA: 0.4    # SmoothL1 weight
+DELTA: 1.5    # Fidelity Loss weight
