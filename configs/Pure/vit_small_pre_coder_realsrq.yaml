@@ -1,17 +1,17 @@
 DATA:
-  DATASET: sisar
+  DATASET: realsrq
   BATCH_SIZE: 16
   PATCH_NUM: 8
-  DATA_PATH: data/SISAR/sr_images_flat
+  DATA_PATH: data/RealSRQ
   NUM_WORKERS: 4
   SCENE_NUM_CLASSES: 9
   TEXTURE_NUM_CLASSES: 11
   STRUCTURE_NUM_CLASSES: 6
 
 TEST:
-  USE_TTA: True  # Test Time Augmentation: 水平翻转增强，可提升 0.005~0.01 PLCC/SRCC
+  USE_TTA: True  # Test Time Augmentation
 SET:
-  COUNT: 8428
+  COUNT: 1617
 STAGE1:
   EPOCHS: 30
   WARMUP_EPOCHS: 5
@@ -33,8 +33,8 @@ dist: True
 texture: True
 structure: True
 
-# Loss function weight optimization (for PLCC/SRCC metrics)
-ALPHA: 1.0    # texture branch loss weight
-BETA: 0.5     # structure branch loss weight
-GAMMA: 0.4    # SmoothL1 weight
-DELTA: 1.5    # Fidelity Loss weight
+# Loss function weight optimization
+ALPHA: 1.0
+BETA: 0.5
+GAMMA: 0.4
+DELTA: 1.5

@@ -199,6 +199,8 @@ def transfer(database, label):
         label = label * 10.0  # 根据实际MOS范围调整
     elif database == "sisar":
         label = label * 100.0  # 根据实际MOS范围调整
+    elif database == "realsrq":
+        label = (label + 4.16) / 12.495 * 100.0  # BT scores [-4.16, 8.33] -> [0, 100]
     return label
 
 
@@ -1230,6 +1232,74 @@ class QADSDATASET_clip(data.Dataset):
                     sample.append((
                         os.path.join(root, img_info['path']),
                         transfer("qads", img_info['mos']),
+                        scene_label,
+                        texture_label,
+                        structure_label,
+                        dist_label,
+                    ))
+                except (TypeError, KeyError) as e:
+                    print(f"Error processing index {item}: {e}")
+
+        self.samples = sample
+        self.transform = transform
+
+    def _load_image(self, path):
+        try:
+            im = Image.open(path).convert("RGB")
+        except:
+            print("ERROR IMG LOADED: ", path)
+            random_img = np.random.rand(224, 224, 3) * 255
+            im = Image.fromarray(np.uint8(random_img))
+        return im
+
+    def __getitem__(self, index):
+        path, target, scene, texture, structure, distortion = self.samples[index]
+        sample = self._load_image(path)
+        sample = self.transform(sample)
+        return sample, target, scene, texture, structure, distortion
+
+    def __len__(self):
+        return len(self.samples)
+
+
+# ============ RealSRQ 数据集 ============
+class REALSRQDATASET_clip(data.Dataset):
+    """RealSRQ 数据集，支持场景、纹理失真、结构失真和粗粒度失真标签（6元组输出）"""
+    def __init__(self, root, index, patch_num, transform=None):
+        label_path = os.path.join(os.path.dirname(__file__), "realsrq_all_clip_sr.txt")
+
+        all_images = []
+        with open(label_path, "r") as f:
+            for line in f:
+                if line.startswith('#') or not line.strip():
+                    continue
+                fields = line.strip().split('\t')
+                if len(fields) < 5:
+                    continue
+                all_images.append({
+                    'path': fields[0],
+                    'mos': float(fields[1]),
+                    'scene': fields[2],
+                    'distortion': fields[3] if len(fields) > 3 else 'other_distortion',
+                    'texture': fields[4] if len(fields) > 4 else 'other_artifact',
+                    'structure': fields[5] if len(fields) > 5 else 'none',
+                })
+
+        sample = []
+        for _, item in enumerate(index):
+            if item >= len(all_images):
+                continue
+            for aug in range(patch_num):
+                try:
+                    img_info = all_images[item]
+                    scene_label = scene2label.get(img_info['scene'], scene2label['others'])
+                    texture_label = cviu17_texture_map.get(img_info['texture'], cviu17_texture_map['other_artifact'])
+                    structure_label = cviu17_structure_map.get(img_info['structure'], cviu17_structure_map['none'])
+                    dist_label = sr_dist2label.get(img_info['distortion'], sr_dist2label['other_distortion'])
+
+                    sample.append((
+                        os.path.join(root, img_info['path']).replace('\\', '/'),
+                        transfer("realsrq", img_info['mos']),
                         scene_label,
                         texture_label,
                         structure_label,

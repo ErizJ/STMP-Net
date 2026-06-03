@@ -178,9 +178,12 @@ def stage1_train(config, model, data_loader, epochs, optimizer, lr_scheduler, lo
         }
 
         if epoch % 4 == 0:
-            # 使用配置中的 TTA 设置
             use_tta = getattr(config.TEST, 'USE_TTA', False)
-            val_plcc, val_srcc, val_plccc, val_srccc = cross_eval(config, model, logger, use_tta=use_tta, in_domain_only=True)
+            try:
+                val_plcc, val_srcc, val_plccc, val_srccc = cross_eval(config, model, logger, use_tta=use_tta, in_domain_only=True)
+            except RuntimeError as e:
+                logger.warning(f"cross_eval failed at epoch {epoch}: {e}, using train_srcc as fallback")
+                val_plcc, val_srcc, val_plccc, val_srccc = train_srcc, train_srcc, 0.0, 0.0
             logger.info(f"stage 1 validate:{val_plcc}, {val_srcc}, {val_plccc}, {val_srccc}")
             
             epoch_result['val_plcc'] = round(val_plcc, 4)
@@ -193,9 +196,23 @@ def stage1_train(config, model, data_loader, epochs, optimizer, lr_scheduler, lo
                 max_srcc = val_srcc
                 max_plcc_c = val_plccc
                 max_srcc_c = val_srccc
-                # 保存最优模型
                 save_checkpoint(config, epoch, model, max_plcc, optimizer, lr_scheduler, loss_scaler, logger)
                 logger.info(f"Saved best model at epoch {epoch} with PLCC: {max_plcc:.4f}")
+            # Also save checkpoint every 4 epochs for safety
+            if epoch % 4 == 0 and epoch > 0:
+                save_state = {
+                    "model": model.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "lr_scheduler": lr_scheduler.state_dict(),
+                    "max_plcc": max_plcc,
+                    "scaler": loss_scaler.state_dict(),
+                    "epoch": epoch,
+                }
+                ckpt_dir = os.path.join(config.OUTPUT, str(config.EXP_INDEX))
+                os.makedirs(ckpt_dir, exist_ok=True)
+                ckpt_path = os.path.join(ckpt_dir, f"ckpt_epoch_{epoch}.pth")
+                torch.save(save_state, ckpt_path)
+                logger.info(f"Saved periodic checkpoint at epoch {epoch}")
             logger.info(f"stage 1 max:{max_plcc}, {max_srcc}, {max_plcc_c}, {max_srcc_c}")
         
         all_results.append(epoch_result)

@@ -613,6 +613,21 @@ def build_CLIP_IQA_dataset(config, num):
                 config.DATA.PATCH_NUM,
                 transform=build_clip_transform2(config),
             )
+    elif config.DATA.DATASET == "realsrq":
+        if num == 1:
+            train_dataset = REALSRQDATASET_clip(
+                config.DATA.DATA_PATH,
+                config.SET.TRAIN_INDEX,
+                config.DATA.PATCH_NUM,
+                transform=build_clip_transform1(config),
+            )
+        else:
+            train_dataset = REALSRQDATASET_clip(
+                config.DATA.DATA_PATH,
+                config.SET.TRAIN_INDEX,
+                config.DATA.PATCH_NUM,
+                transform=build_clip_transform2(config),
+            )
     else:
         raise NotImplementedError("We only support common IQA dataset Now.")
     return train_dataset
@@ -750,6 +765,13 @@ def build_dataloader(config, dataset_name, dataset_path, batch_size, test_index)
         )
     elif dataset_name == "waterloo15":
         test_dataset = WATERLOO15DATASET_clip(
+            dataset_path,
+            test_index,
+            config.DATA.PATCH_NUM,
+            transform=build_clip_transform2(config)
+        )
+    elif dataset_name == "realsrq":
+        test_dataset = REALSRQDATASET_clip(
             dataset_path,
             test_index,
             config.DATA.PATCH_NUM,
